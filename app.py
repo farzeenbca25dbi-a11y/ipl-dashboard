@@ -107,7 +107,7 @@ CSS = """<style>
 .stApp{background:radial-gradient(1200px 600px at 85% -10%,rgba(139,92,246,.18),transparent 60%),
  radial-gradient(900px 500px at -10% 10%,rgba(59,130,246,.12),transparent 60%),#070A18}
 section[data-testid=stSidebar]{background:#0A0E20;border-right:1px solid rgba(255,255,255,.06)}
-.block-container{padding-top:3.5rem;max-width:1500px}
+.block-container{padding-top:1.4rem;max-width:1500px}
 .hero{display:flex;align-items:center;gap:22px;padding:18px 26px;margin-bottom:18px;border-radius:18px;
  background:linear-gradient(120deg,rgba(139,92,246,.20),rgba(59,130,246,.07));
  border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 40px rgba(0,0,0,.35)}
@@ -238,6 +238,10 @@ def page_overview():
     wt, pt = W("t")
     k = q(f"""SELECT COUNT(*) n, COUNT(DISTINCT venue_clean) v,
               ROUND(1.0*COUNT(*)/COUNT(DISTINCT venue_clean),1) apv FROM mv {wm}""", pm).iloc[0]
+    if k.n == 0:
+        st.warning("No matches fit this combination of filters (for example, the team did not play "
+                   "at that ground in that season). Click Reset Filters or widen a filter.")
+        return
     nt = q(f"SELECT COUNT(DISTINCT team) n FROM tm {wt}", pt).n[0]
     best = q(f"SELECT team, SUM(won) w FROM tm {wt} GROUP BY team ORDER BY w DESC LIMIT 1", pt)
     busy = q(f"SELECT venue_clean v, COUNT(*) n FROM mv {wm} GROUP BY v ORDER BY n DESC LIMIT 1", pm)
@@ -249,9 +253,6 @@ def page_overview():
              ("Avg Matches / Venue", f"{k.apv}", "")]
     for col, cd in zip(c, cards):
         col.markdown(kpi(*cd), unsafe_allow_html=True)
-    if k.n == 0:
-        st.warning("No matches for the current filters.")
-        return
 
     sec("Team record")
     t = q(f"""SELECT team, SUM(played) played, SUM(won) wins FROM tm {wt}
